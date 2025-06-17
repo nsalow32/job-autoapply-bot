@@ -39,16 +39,15 @@ def load_applied_urls():
 
 
 def log_application(job):
-    os.makedirs(os.path.dirname(CSV_PATH) or ".", exist_ok=True)
-    with open(CSV_PATH, "a", newline="") as f:
-        csv.writer(f).writerow([
-            datetime.datetime.utcnow().isoformat(),
-            job["title"],
-            job["company"],
-            job["url"],
-        ])
+    row = [
+        datetime.datetime.utcnow().isoformat(),
+        job["title"],
+        job["company"],
+        job["url"]
+    ]
+    print(f"[CSV LOG] {','.join(row)}", flush=True)
     print(f"[LOG] Applied → {job['url']}", flush=True)
-    print(f"[CSV LOG] {job['title']} at {job['company']} logged.")
+
 
 
 # --- SCRAPERS ---

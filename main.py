@@ -33,7 +33,10 @@ def load_applied_urls():
     if not os.path.exists(CSV_PATH):
         return set()
     with open(CSV_PATH) as f:
-        return {row[3] for row in csv.reader(f)}
+        reader = csv.reader(f)
+        next(reader, None)  # Skip header
+        return {row[3] for row in reader if len(row) >= 4}
+
 
 def log_application(job):
     os.makedirs(os.path.dirname(CSV_PATH) or ".", exist_ok=True)

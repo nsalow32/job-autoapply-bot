@@ -45,6 +45,8 @@ def log_application(job):
             job["url"],
         ])
     print(f"[LOG] Applied → {job['url']}", flush=True)
+    print(f"[CSV LOG] {job['title']} at {job['company']} logged.")
+
 
 # --- SCRAPERS ---
 

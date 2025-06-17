@@ -11,7 +11,6 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
-import undetected_chromedriver as uc
 
 app = Flask(__name__)
 
@@ -30,13 +29,11 @@ RESUME_PATH = config.get("resume_path", "resume.pdf")
 USER_DATA = config.get("user_data", {})
 CSV_PATH = "applied_jobs.csv"
 
-
 def load_applied_urls():
     if not os.path.exists(CSV_PATH):
         return set()
     with open(CSV_PATH) as f:
         return {row[3] for row in csv.reader(f)}
-
 
 def log_application(job):
     os.makedirs(os.path.dirname(CSV_PATH) or ".", exist_ok=True)
@@ -48,7 +45,6 @@ def log_application(job):
             job["url"],
         ])
     print(f"[LOG] Applied → {job['url']}", flush=True)
-
 
 # --- SCRAPERS ---
 
@@ -76,7 +72,6 @@ def scrape_remotive():
         print(f"[ERROR] Remotive: {e}")
     return jobs
 
-
 def scrape_remoteok():
     print("[SCRAPE] RemoteOK...")
     url = "https://remoteok.io/remote-dev-jobs"
@@ -97,7 +92,6 @@ def scrape_remoteok():
     except Exception as e:
         print(f"[ERROR] RemoteOK: {e}")
     return jobs
-
 
 def scrape_weworkremotely():
     print("[SCRAPE] We Work Remotely...")
@@ -120,7 +114,6 @@ def scrape_weworkremotely():
         print(f"[ERROR] WWR: {e}")
     return jobs
 
-
 def scrape_jobspresso():
     print("[SCRAPE] Jobspresso...")
     url = "https://jobspresso.co/remote-tech-jobs/"
@@ -142,16 +135,13 @@ def scrape_jobspresso():
         print(f"[ERROR] Jobspresso: {e}")
     return jobs
 
-
 def scrape_otta():
     print("[SCRAPE] Otta...")
     return []
 
-
 def scrape_angellist():
     print("[SCRAPE] AngelList...")
     return []
-
 
 def get_jobs():
     scrapers = [
@@ -177,12 +167,14 @@ def get_jobs():
     print(f"[SCRAPE] {len(unique)} unique jobs found")
     return unique
 
-
 def apply_to_job(job):
     print(f"[AUTO] Attempting real apply to {job['url']}")
-    options = uc.ChromeOptions()
-    options.headless = True
-    driver = uc.Chrome(options=options)
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+
+    driver = webdriver.Chrome(options=options)
     try:
         driver.get(job["url"])
         time.sleep(4)
@@ -212,7 +204,6 @@ def apply_to_job(job):
     finally:
         driver.quit()
 
-
 def bot_cycle():
     applied = load_applied_urls()
     print(f"[BOT] Loaded {len(applied)} applied URLs")
@@ -232,13 +223,11 @@ def bot_cycle():
 
     print("[BOT] Cycle complete")
 
-
 def scheduler():
     bot_cycle()
     while True:
         time.sleep(30)
         bot_cycle()
-
 
 if __name__ == "__main__":
     th = threading.Thread(target=scheduler, daemon=True)

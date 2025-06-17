@@ -1,0 +1,11 @@
+{
+  "keywords": ["python", "automation", "entry level", "remote", "developer", "ai", "it"],
+  "max_results": 50,
+  "resume_path": "resume.pdf",
+  "user_data": {
+    "full_name": "Jesse Torres",
+    "email": "jessetorres386@gmail.com",
+    "phone": "3234723070",
+    "linkedin": "https://www.linkedin.com/in/jesse-torres11/"
+  }
+}

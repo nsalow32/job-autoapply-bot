@@ -134,9 +134,50 @@ def scrape_weworkremotely():
         print(f"[ERROR] WWR: {e}", flush=True)
     return jobs
 
+def scrape_jobspresso():
+    print("[SCRAPE] Jobspresso...", flush=True)
+    url = "https://jobspresso.co/remote-developer-jobs/"
+    jobs = []
+    try:
+        r = requests.get(url, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+        for li in soup.select("ul.jobs li.job_listing")[:MAX_RESULTS]:
+            a = li.select_one("a")
+            if not a: continue
+            href = a["href"]
+            title = a.get("title", "Remote Job")
+            company = li.select_one(".company")
+            company_name = company.get_text(strip=True) if company else "Unknown"
+            if any(kw in title.lower() for kw in KEYWORDS):
+                jobs.append({"url": href, "title": title, "company": company_name})
+    except Exception as e:
+        print(f"[ERROR] Jobspresso: {e}", flush=True)
+    return jobs
+def scrape_remoteco():
+    print("[SCRAPE] Remote.co...", flush=True)
+    url = "https://remote.co/remote-jobs/developer/"
+    jobs = []
+    try:
+        r = requests.get(url, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+        for row in soup.select("li.job_listing")[:MAX_RESULTS]:
+            a = row.select_one("a")
+            if not a: continue
+            href = a["href"]
+            title = a.get("title", "Remote Job")
+            company = row.select_one(".company")
+            company_name = company.get_text(strip=True) if company else "Unknown"
+            if any(kw in title.lower() for kw in KEYWORDS):
+                jobs.append({"url": href, "title": title, "company": company_name})
+    except Exception as e:
+        print(f"[ERROR] Remote.co: {e}", flush=True)
+    return jobs
+
+
 def get_jobs():
     all_jobs = []
-    for fn in (scrape_remotive, scrape_remoteok, scrape_weworkremotely):
+    for fn in (scrape_remotive, scrape_remoteok, scrape_weworkremotely, scrape_jobspresso, scrape_remoteco):
+
         all_jobs.extend(fn())
     seen, unique = set(), []
     for j in all_jobs:

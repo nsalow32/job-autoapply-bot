@@ -10,10 +10,10 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from urllib.parse import quote_plus  # ADDED FOR TABLE NAME FIX
+from urllib.parse import quote_plus
 
 app = Flask(__name__)
- 
+
 @app.route("/")
 def home():
     return "alive"
@@ -57,7 +57,7 @@ def log_application(job):
     print(f"[LOG] Applied → {job['url']}", flush=True)
 
     try:
-        encoded_table = quote_plus(AIRTABLE_TABLE_NAME)  # URL encode the table name
+        encoded_table = quote_plus(AIRTABLE_TABLE_NAME)
         airtable_url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{encoded_table}"
         headers = {
             "Authorization": f"Bearer {AIRTABLE_TOKEN}",
@@ -79,7 +79,6 @@ def log_application(job):
     except Exception as e:
         print(f"[AIRTABLE ERROR] {e}")
 
-# Scrapers unchanged
 def scrape_remotive():
     print("[SCRAPE] Remotive...")
     url = "https://remotive.io/remote-jobs/software-dev"
@@ -174,6 +173,7 @@ def apply_to_job(job):
     try:
         driver.get(job["url"])
         time.sleep(4)
+
         inputs = driver.find_elements(By.TAG_NAME, "input")
         for i in inputs:
             name = i.get_attribute("name")
@@ -203,6 +203,7 @@ def apply_to_job(job):
 def bot_cycle():
     applied = load_applied_urls()
     print(f"[BOT] Loaded {len(applied)} applied URLs")
+
     jobs = get_jobs()
     print(f"[BOT] Fetched {len(jobs)} jobs")
     for job in jobs:
@@ -210,10 +211,12 @@ def bot_cycle():
         if u in applied:
             print(f"⏩ Skipping {u}")
             continue
+
         print(f"[APPLY] {u}")
         apply_to_job(job)
         log_application(job)
         applied.add(u)
+
     print("[BOT] Cycle complete")
 
 def scheduler():

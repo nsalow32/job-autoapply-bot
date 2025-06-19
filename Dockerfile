@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
     libasound2 \
     libnss3 \
     libxss1 \
-    libxst6 \
+    libxtst6 \
     xdg-utils \
     chromium \
     chromium-driver \

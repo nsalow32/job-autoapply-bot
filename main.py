@@ -48,9 +48,15 @@ def log_application(job):
         job["company"],
         job["url"]
     ]
+    # Write to CSV
+    with open(CSV_PATH, "a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(row)
+
     print(f"[CSV LOG] {','.join(row)}", flush=True)
     print(f"[LOG] Applied → {job['url']}", flush=True)
 
+    # Write to Airtable
     try:
         airtable_url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
         headers = {
@@ -59,17 +65,20 @@ def log_application(job):
         }
         data = {
             "fields": {
-                "timestamp": row[0],
-                "title": job["title"],
+                "Time_stamp": row[0],        # match Airtable field
+                "Title": job["title"],       # match Airtable field
                 "company": job["company"],
-                "url": job["url"]
+                "URL": job["url"]
             }
         }
         r = requests.post(airtable_url, headers=headers, json=data)
-        if r.status_code != 200:
+        if r.status_code == 200:
+            print("[AIRTABLE ✅] Log synced.")
+        else:
             print(f"[AIRTABLE ERROR] {r.status_code}: {r.text}")
     except Exception as e:
         print(f"[AIRTABLE ERROR] {e}")
+
 
 # --- SCRAPERS ---
 

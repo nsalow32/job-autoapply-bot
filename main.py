@@ -12,6 +12,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from pyairtable import Table   # new Airtable client
 
+print("[DEBUG] AIRTABLE_TOKEN =", os.getenv("AIRTABLE_TOKEN"))
+print("[DEBUG] AIRTABLE_BASE_ID =", os.getenv("AIRTABLE_BASE_ID"))
+print("[DEBUG] AIRTABLE_TABLE_NAME =", os.getenv("AIRTABLE_TABLE_NAME"))
+
+
 app = Flask(__name__)
 
 @app.route("/")

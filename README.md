@@ -1,19 +1,20 @@
 # Job AutoApply Bot
 
-Automatically applies to remote dev jobs and logs each application to Airtable and CSV.
+Automatically applies to remote dev jobs and logs each application to **Airtable** and **CSV** — 24/7.
 
 ---
 
-### 1. Clone the GitHub Repo
+## 1. Clone the GitHub Repo
 
-Go to: https://github.com/jtorres-1  
-Click “Use this template” or download the ZIP
+Go to: [https://github.com/jtorres-1](https://github.com/jtorres-1)  
+Click **“Use this template”** or download the ZIP. OR CLICK GREEN CODE BUTTON AND COPY TEMPLATE
 
 ---
 
-### 2. Add Your Info
+## 2. Add Your Info
 
 Open `config.json` and update:
+
 
 {
   "full_name": "Your Name",
@@ -23,53 +24,57 @@ Open `config.json` and update:
   "resume_path": "resume.pdf"
 }
 
-3. Replace resume.pdf
-Upload your own resume into the root folder and name it exactly: resume.pdf
+3. Replace Your Resume
 
-4. Deploy to Railway
-Go to https://railway.app
-Click New Project → Deploy from GitHub Repo
-Done ✅
-It will auto-start and apply for jobs 24/7 in the background.
-Check applied_jobs.csv or Airtable to view results.
+Upload your resume into the root folder and rename it exactly:
+resume.pdf
 
-5. Connect Airtable (Logging System)
-Step 1: Create Airtable Token
+4. Connect Airtable (Logging System)
 
-Go to https://airtable.com/account → Create a token
+Step 1: Create a Token
+Go to: https://airtable.com/account
+Click “Create token”
 Name it: JobBot
-Scopes:
+Select these Scopes:
 data.records:read
 data.records:write
 schema.bases:read
-Select your workspace and base
-Copy the token
+Under Access, select:
+Your workspace
+The base you're using for logging (e.g. “job bot logs”)
+Click Create token and Copy it
 
-Step 2: Get Your Base & Table IDs
-
-Visit https://airtable.com/api
+Step 2: Get Your Base ID and Table ID
+Go to: https://airtable.com/api
 Click your base (e.g. “job bot logs”)
-Copy:
-Base ID → looks like appXXXXXXXXXXXX
-Table ID → under "Table 1", looks like tblXXXXXXXXXXXX
+Copy these:
+Base ID → starts with app...
+Table ID (under Table 1) → starts with tbl...
 
-Step 3: Add Environment Variables in Railway
-
-Go to your Railway project → Variables tab, and add:
-
-AIRTABLE_TOKEN = your_token_here
-AIRTABLE_BASE_ID = your_base_id_here
+AIRTABLE_TOKEN      = your_token_here
+AIRTABLE_BASE_ID    = your_base_id_here
 AIRTABLE_TABLE_NAME = your_table_id_here
-✅ Make sure the Time_stamp field in Airtable is set to Date with Time Enabled
-(Otherwise logging will fail)
 
-6. Done ✅
-Bot applies to jobs on Remotive, RemoteOK, and WeWorkRemotely
-Logs every successful apply to Airtable and CSV
-No coding or manual effort required
-Need help?
-Email: jtxcode@yahoo.com
+✅ Make sure your Time_stamp field in Airtable is set to:
 
----
+Type: Date
+**With time enabled`
+Otherwise, logging will fail!
 
-Let me know if you want me to drop this straight into your GitHub via a PR or if you’ll paste it yourself.
+5. Deploy to Railway
+
+Go to: https://railway.app
+Click New Project → Deploy from GitHub Repo
+Select the repo you cloned or created from template
+✅ Done — the bot will:
+
+Auto-apply to jobs from Remotive, RemoteOK, and WeWorkRemotely
+Log to Airtable and CSV
+Run 24/7 in the background — no coding or manual work needed
+
+Need Help?
+
+📩 Email support: jtxcode@yahoo.com
+
+
+

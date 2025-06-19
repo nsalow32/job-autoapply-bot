@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from urllib.parse import quote  # ADDED FOR TABLE NAME FIX
+from urllib.parse import quote_plus  # ADDED FOR TABLE NAME FIX
 
 app = Flask(__name__)
 
@@ -57,7 +57,7 @@ def log_application(job):
     print(f"[LOG] Applied → {job['url']}", flush=True)
 
     try:
-        encoded_table = quote(AIRTABLE_TABLE_NAME)  # URL encode the table name
+        encoded_table = quote_plus(AIRTABLE_TABLE_NAME)  # URL encode the table name
         airtable_url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{encoded_table}"
         headers = {
             "Authorization": f"Bearer {AIRTABLE_TOKEN}",

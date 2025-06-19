@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
     libasound2 \
     libnss3 \
     libxss1 \
-    libxtst6 \
+    libxst6 \
     xdg-utils \
     chromium \
     chromium-driver \
@@ -27,8 +27,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Add your bot code
-COPY . /app
-WORKDIR /app
+COPY . .
+WORKDIR .
 
 # Run the bot
 CMD ["python3", "main.py"]
+

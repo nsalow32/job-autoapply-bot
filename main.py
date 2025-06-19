@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from urllib.parse import quote_plus
+from urllib.parse import quote  # ← use quote, not quote_plus
 
 app = Flask(__name__)
 
@@ -35,49 +35,52 @@ AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
 AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME")
 
 def load_applied_urls():
+    # initialize CSV with header row if missing
     if not os.path.exists(CSV_PATH):
+        with open(CSV_PATH, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["timestamp", "title", "company", "url"])
         return set()
-    with open(CSV_PATH) as f:
+    # else read existing
+    with open(CSV_PATH, newline="") as f:
         reader = csv.reader(f)
         next(reader, None)
         return {row[3] for row in reader if len(row) >= 4}
 
 def log_application(job):
-    row = [
-        datetime.datetime.utcnow().isoformat(),
-        job["title"],
-        job["company"],
-        job["url"]
-    ]
+    ts = datetime.datetime.utcnow().isoformat()
+    row = [ts, job["title"], job["company"], job["url"]]
+
+    # append to CSV
     with open(CSV_PATH, "a", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(row)
-
     print(f"[CSV LOG] {','.join(row)}", flush=True)
     print(f"[LOG] Applied → {job['url']}", flush=True)
 
+    # post to Airtable
     try:
-        encoded_table = quote_plus(AIRTABLE_TABLE_NAME)
-        airtable_url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{encoded_table}"
+        table = quote(AIRTABLE_TABLE_NAME, safe="")   # encode spaces as %20
+        airtable_url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{table}"
         headers = {
             "Authorization": f"Bearer {AIRTABLE_TOKEN}",
             "Content-Type": "application/json"
         }
-        data = {
+        payload = {
             "fields": {
-                "Time_stamp": row[0],
+                "Time_stamp": ts,
                 "Title": job["title"],
                 "Company": job["company"],
                 "URL": job["url"]
             }
         }
-        r = requests.post(airtable_url, headers=headers, json=data)
-        if r.status_code == 200:
-            print("[AIRTABLE ✅] Log synced.")
+        r = requests.post(airtable_url, headers=headers, json=payload, timeout=10)
+        if r.status_code in (200, 201):
+            print("[AIRTABLE ✅] Log synced.", flush=True)
         else:
-            print(f"[AIRTABLE ERROR] {r.status_code}: {r.text}")
+            print(f"[AIRTABLE ERROR] {r.status_code}: {r.text}", flush=True)
     except Exception as e:
-        print(f"[AIRTABLE ERROR] {e}")
+        print(f"[AIRTABLE ERROR] {e}", flush=True)
 
 def scrape_remotive():
     print("[SCRAPE] Remotive...")
@@ -142,20 +145,14 @@ def scrape_weworkremotely():
     return jobs
 
 def get_jobs():
-    scrapers = [
-        scrape_remotive,
-        scrape_remoteok,
-        scrape_weworkremotely
-    ]
+    scrapers = [scrape_remotive, scrape_remoteok, scrape_weworkremotely]
     all_jobs = []
     for fn in scrapers:
         all_jobs.extend(fn())
-
     seen, unique = set(), []
     for j in all_jobs:
-        u = j["url"]
-        if u not in seen:
-            seen.add(u)
+        if j["url"] not in seen:
+            seen.add(j["url"])
             unique.append(j)
         if len(unique) >= MAX_RESULTS:
             break
@@ -168,32 +165,24 @@ def apply_to_job(job):
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-
     driver = webdriver.Chrome(options=options)
     try:
         driver.get(job["url"])
         time.sleep(4)
-
-        inputs = driver.find_elements(By.TAG_NAME, "input")
-        for i in inputs:
-            name = i.get_attribute("name")
-            if name and "email" in name.lower():
-                i.send_keys(USER_DATA.get("email", ""))
-            elif name and "name" in name.lower():
-                i.send_keys(USER_DATA.get("full_name", ""))
-            elif name and "phone" in name.lower():
-                i.send_keys(USER_DATA.get("phone", ""))
-
-        file_inputs = driver.find_elements(By.CSS_SELECTOR, "input[type='file']")
-        for f in file_inputs:
+        # fill inputs
+        for i in driver.find_elements(By.TAG_NAME, "input"):
+            name = i.get_attribute("name") or ""
+            if "email" in name.lower():   i.send_keys(USER_DATA.get("email", ""))
+            elif "name" in name.lower():  i.send_keys(USER_DATA.get("full_name", ""))
+            elif "phone" in name.lower(): i.send_keys(USER_DATA.get("phone", ""))
+        # upload resume
+        for f in driver.find_elements(By.CSS_SELECTOR, "input[type='file']"):
             f.send_keys(os.path.abspath(RESUME_PATH))
-
-        buttons = driver.find_elements(By.TAG_NAME, "button")
-        for b in buttons:
+        # click apply
+        for b in driver.find_elements(By.TAG_NAME, "button"):
             if "submit" in b.text.lower() or "apply" in b.text.lower():
                 b.click()
                 break
-
         print("[AUTO] Applied successfully")
     except Exception as e:
         print(f"[ERROR][AUTO] Failed to apply: {e}")
@@ -203,20 +192,15 @@ def apply_to_job(job):
 def bot_cycle():
     applied = load_applied_urls()
     print(f"[BOT] Loaded {len(applied)} applied URLs")
-
     jobs = get_jobs()
     print(f"[BOT] Fetched {len(jobs)} jobs")
     for job in jobs:
-        u = job["url"]
-        if u in applied:
-            print(f"⏩ Skipping {u}")
+        if job["url"] in applied:
+            print(f"⏩ Skipping {job['url']}")
             continue
-
-        print(f"[APPLY] {u}")
         apply_to_job(job)
         log_application(job)
-        applied.add(u)
-
+        applied.add(job["url"])
     print("[BOT] Cycle complete")
 
 def scheduler():

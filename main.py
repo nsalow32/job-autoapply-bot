@@ -13,7 +13,7 @@ from selenium.webdriver.chrome.options import Options
 from urllib.parse import quote_plus  # ADDED FOR TABLE NAME FIX
 
 app = Flask(__name__)
-
+ 
 @app.route("/")
 def home():
     return "alive"

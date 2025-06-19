@@ -1,4 +1,3 @@
-# Full main.py - Job AutoApply Bot
 import os
 import time
 import csv
@@ -18,6 +17,7 @@ app = Flask(__name__)
 def home():
     return "alive"
 
+# Load config
 CONFIG_FILE = "config.json"
 with open(CONFIG_FILE) as f:
     config = json.load(f)
@@ -30,6 +30,9 @@ CSV_PATH = "applied_jobs.csv"
 
 def load_applied_urls():
     if not os.path.exists(CSV_PATH):
+        with open(CSV_PATH, "w", newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(["timestamp", "title", "company", "url"])
         return set()
     with open(CSV_PATH, newline='') as f:
         reader = csv.reader(f)
@@ -37,38 +40,133 @@ def load_applied_urls():
         return {row[3] for row in reader if len(row) >= 4}
 
 def log_application(job):
-    is_new = not os.path.exists(CSV_PATH)
-    with open(CSV_PATH, "a", newline="") as f:
+    row = [
+        datetime.datetime.utcnow().isoformat(),
+        job["title"],
+        job["company"],
+        job["url"]
+    ]
+    with open(CSV_PATH, "a", newline='') as f:
         writer = csv.writer(f)
-        if is_new:
-            writer.writerow(["timestamp", "title", "company", "url"])
-        row = [
-            datetime.datetime.utcnow().isoformat(),
-            job["title"],
-            job["company"],
-            job["url"]
-        ]
         writer.writerow(row)
     print(f"[CSV LOG] {','.join(row)}", flush=True)
     print(f"[LOG] Applied → {job['url']}", flush=True)
 
-# Add scrapers here (Remotive, RemoteOK, WWR, Jobspresso, etc.)...
-# ... YOUR EXISTING SCRAPER FUNCTIONS ARE GOOD
+# SCRAPERS
+
+def scrape_remotive():
+    print("[SCRAPE] Remotive...")
+    url = "https://remotive.io/remote-jobs/software-dev"
+    jobs = []
+    try:
+        r = requests.get(url, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+        for tile in soup.select("div.job-tile")[:MAX_RESULTS]:
+            t = tile.select_one(".job-tile-title")
+            l = tile.select_one("a")
+            c = tile.select_one(".job-tile-company")
+            if not (t and l):
+                continue
+            title = t.get_text(strip=True)
+            company = c.get_text(strip=True) if c else "Unknown"
+            href = l["href"]
+            full = href if href.startswith("http") else f"https://remotive.io{href}"
+            text = (title + " " + company).lower()
+            if any(kw in text for kw in KEYWORDS):
+                jobs.append({"url": full, "title": title, "company": company})
+    except Exception as e:
+        print(f"[ERROR] Remotive: {e}")
+    return jobs
+
+def scrape_remoteok():
+    print("[SCRAPE] RemoteOK...")
+    url = "https://remoteok.io/remote-dev-jobs"
+    jobs = []
+    try:
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+        for row in soup.select("tr.job")[:MAX_RESULTS]:
+            l = row.select_one("a.preventLink")
+            if not l:
+                continue
+            full_url = "https://remoteok.io" + l["href"]
+            title = row.get("data-position", "Remote Job")
+            company = row.get("data-company", "Unknown")
+            text = (title + " " + company).lower()
+            if any(kw in text for kw in KEYWORDS):
+                jobs.append({"url": full_url, "title": title, "company": company})
+    except Exception as e:
+        print(f"[ERROR] RemoteOK: {e}")
+    return jobs
+
+def scrape_weworkremotely():
+    print("[SCRAPE] We Work Remotely...")
+    url = "https://weworkremotely.com/categories/remote-programming-jobs"
+    jobs = []
+    try:
+        r = requests.get(url, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+        for section in soup.select("section.jobs li.feature")[:MAX_RESULTS]:
+            l = section.select_one("a")
+            if not l:
+                continue
+            href = l["href"]
+            full_url = "https://weworkremotely.com" + href
+            title = section.get_text(strip=True)
+            company = "Unknown"
+            if any(kw in title.lower() for kw in KEYWORDS):
+                jobs.append({"url": full_url, "title": title, "company": company})
+    except Exception as e:
+        print(f"[ERROR] WWR: {e}")
+    return jobs
+
+def scrape_jobspresso():
+    print("[SCRAPE] Jobspresso...")
+    url = "https://jobspresso.co/remote-tech-jobs/"
+    jobs = []
+    try:
+        r = requests.get(url, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
+        for post in soup.select("article.job_listing")[:MAX_RESULTS]:
+            title_el = post.select_one("h3")
+            company_el = post.select_one("div.company")
+            link_el = post.select_one("a")
+            if title_el and link_el:
+                title = title_el.get_text(strip=True)
+                company = company_el.get_text(strip=True) if company_el else "Unknown"
+                href = link_el["href"]
+                if any(kw in (title + company).lower() for kw in KEYWORDS):
+                    jobs.append({"url": href, "title": title, "company": company})
+    except Exception as e:
+        print(f"[ERROR] Jobspresso: {e}")
+    return jobs
+
+def scrape_otta():
+    print("[SCRAPE] Otta...")
+    return []
+
+def scrape_angellist():
+    print("[SCRAPE] AngelList...")
+    return []
 
 def get_jobs():
     scrapers = [
         scrape_remotive,
         scrape_remoteok,
         scrape_weworkremotely,
-        scrape_jobspresso
+        scrape_jobspresso,
+        scrape_otta,
+        scrape_angellist
     ]
     all_jobs = []
     for fn in scrapers:
         all_jobs.extend(fn())
+
     seen, unique = set(), []
     for j in all_jobs:
-        if j["url"] not in seen:
-            seen.add(j["url"])
+        u = j["url"]
+        if u not in seen:
+            seen.add(u)
             unique.append(j)
         if len(unique) >= MAX_RESULTS:
             break
@@ -81,10 +179,8 @@ def apply_to_job(job):
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--window-size=1920x1080')
-
     driver = webdriver.Chrome(options=options)
+
     try:
         driver.get(job["url"])
         time.sleep(4)
@@ -107,8 +203,8 @@ def apply_to_job(job):
             if "submit" in b.text.lower() or "apply" in b.text.lower():
                 b.click()
                 break
+
         print("[AUTO] Applied successfully")
-        log_application(job)
     except Exception as e:
         print(f"[ERROR][AUTO] Failed to apply: {e}")
     finally:
@@ -120,18 +216,20 @@ def bot_cycle():
     jobs = get_jobs()
     print(f"[BOT] Fetched {len(jobs)} jobs")
     for job in jobs:
-        if job["url"] in applied:
-            print(f"⏩ Skipping {job['url']}")
+        u = job["url"]
+        if u in applied:
+            print(f"⏩ Skipping {u}")
             continue
-        print(f"[APPLY] {job['url']}")
+        print(f"[APPLY] {u}")
         apply_to_job(job)
-        applied.add(job["url"])
+        log_application(job)
+        applied.add(u)
     print("[BOT] Cycle complete")
 
 def scheduler():
     bot_cycle()
     while True:
-        time.sleep(30 * 60)  # Every 30 mins
+        time.sleep(30)
         bot_cycle()
 
 if __name__ == "__main__":

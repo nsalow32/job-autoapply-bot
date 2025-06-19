@@ -46,11 +46,19 @@ def log_application(job):
         job["company"],
         job["url"]
     ]
-    with open(CSV_PATH, "a", newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(row)
     print(f"[CSV LOG] {','.join(row)}", flush=True)
     print(f"[LOG] Applied → {job['url']}", flush=True)
+
+    try:
+        file_exists = os.path.isfile(CSV_PATH)
+        with open(CSV_PATH, "a", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            if not file_exists:
+                writer.writerow(["timestamp", "title", "company", "url"])
+            writer.writerow(row)
+    except Exception as e:
+        print(f"[ERROR] Failed to write to CSV: {e}")
+
 
 # SCRAPERS
 

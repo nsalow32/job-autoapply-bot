@@ -40,21 +40,21 @@ def load_applied_urls():
         return {row[3] for row in reader if len(row) >= 4}
 
 def log_application(job):
-    airtable_token = "patAP2hp7wFxVxHoL_b7f8817f95e75d52b75a28d020485a882d5c94916c4355a2c52d2c99009196b3"
-    base_id = "apppZ4y5ClApelyb7"
-    table_name = "Table 1"  # Change this if your table has a different name
-
     timestamp = datetime.datetime.utcnow().isoformat()
     title = job["title"]
     company = job["company"]
     url = job["url"]
 
-    # Local console logging
+    # Local print log
     row = [timestamp, title, company, url]
     print(f"[CSV LOG] {','.join(row)}", flush=True)
     print(f"[LOG] Applied → {url}", flush=True)
 
     # Airtable logging
+    airtable_token = "patAP2hp7wFxVxHoL_b7f8817f95e75d52b75a28d020485a882d5c94916c4355a2c52d2c99009196b3"
+    base_id = "apppZ4y5ClApelyb7"
+    table_name = "Table 1"  # or whatever your table is named
+
     airtable_url = f"https://api.airtable.com/v0/{base_id}/{table_name}"
     headers = {
         "Authorization": f"Bearer {airtable_token}",
@@ -70,13 +70,14 @@ def log_application(job):
     }
 
     try:
-        r = requests.post(airtable_url, headers=headers, json=data)
-        if r.status_code == 200 or r.status_code == 201:
+        res = requests.post(airtable_url, headers=headers, json=data)
+        if res.status_code in [200, 201]:
             print("[AIRTABLE] Logged successfully")
         else:
-            print(f"[AIRTABLE ERROR] {r.status_code} - {r.text}")
+            print(f"[AIRTABLE ERROR] {res.status_code}: {res.text}")
     except Exception as e:
         print(f"[AIRTABLE EXCEPTION] {e}")
+
 
 
 

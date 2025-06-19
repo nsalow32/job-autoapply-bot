@@ -40,24 +40,44 @@ def load_applied_urls():
         return {row[3] for row in reader if len(row) >= 4}
 
 def log_application(job):
-    row = [
-        datetime.datetime.utcnow().isoformat(),
-        job["title"],
-        job["company"],
-        job["url"]
-    ]
+    airtable_token = "patAP2hp7wFxVxHoL_b7f8817f95e75d52b75a28d020485a882d5c94916c4355a2c52d2c99009196b3"
+    base_id = "apppZ4y5ClApelyb7"
+    table_name = "Table 1"  # Change this if your table has a different name
+
+    timestamp = datetime.datetime.utcnow().isoformat()
+    title = job["title"]
+    company = job["company"]
+    url = job["url"]
+
+    # Local console logging
+    row = [timestamp, title, company, url]
     print(f"[CSV LOG] {','.join(row)}", flush=True)
-    print(f"[LOG] Applied → {job['url']}", flush=True)
+    print(f"[LOG] Applied → {url}", flush=True)
+
+    # Airtable logging
+    airtable_url = f"https://api.airtable.com/v0/{base_id}/{table_name}"
+    headers = {
+        "Authorization": f"Bearer {airtable_token}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "fields": {
+            "Timestamp": timestamp,
+            "Job Title": title,
+            "Company": company,
+            "URL": url
+        }
+    }
 
     try:
-        file_exists = os.path.isfile(CSV_PATH)
-        with open(CSV_PATH, "a", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            if not file_exists:
-                writer.writerow(["timestamp", "title", "company", "url"])
-            writer.writerow(row)
+        r = requests.post(airtable_url, headers=headers, json=data)
+        if r.status_code == 200 or r.status_code == 201:
+            print("[AIRTABLE] Logged successfully")
+        else:
+            print(f"[AIRTABLE ERROR] {r.status_code} - {r.text}")
     except Exception as e:
-        print(f"[ERROR] Failed to write to CSV: {e}")
+        print(f"[AIRTABLE EXCEPTION] {e}")
+
 
 
 # SCRAPERS

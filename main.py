@@ -28,60 +28,50 @@ RESUME_PATH = config.get("resume_path", "resume.pdf")
 USER_DATA = config.get("user_data", {})
 CSV_PATH = "applied_jobs.csv"
 
+# Airtable ENV
+AIRTABLE_TOKEN = os.getenv("AIRTABLE_TOKEN")
+AIRTABLE_BASE_ID = os.getenv("AIRTABLE_BASE_ID")
+AIRTABLE_TABLE_NAME = os.getenv("AIRTABLE_TABLE_NAME")
+
 def load_applied_urls():
     if not os.path.exists(CSV_PATH):
-        with open(CSV_PATH, "w", newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(["timestamp", "title", "company", "url"])
         return set()
-    with open(CSV_PATH, newline='') as f:
+    with open(CSV_PATH) as f:
         reader = csv.reader(f)
-        next(reader, None)
+        next(reader, None)  # Skip header
         return {row[3] for row in reader if len(row) >= 4}
 
 def log_application(job):
-    timestamp = datetime.datetime.utcnow().isoformat()
-    title = job["title"]
-    company = job["company"]
-    url = job["url"]
-
-    # Local print log
-    row = [timestamp, title, company, url]
+    row = [
+        datetime.datetime.utcnow().isoformat(),
+        job["title"],
+        job["company"],
+        job["url"]
+    ]
     print(f"[CSV LOG] {','.join(row)}", flush=True)
-    print(f"[LOG] Applied → {url}", flush=True)
-
-    # Airtable logging
-    airtable_token = "patAP2hp7wFxVxHoL_b7f8817f95e75d52b75a28d020485a882d5c94916c4355a2c52d2c99009196b3"
-    base_id = "apppZ4y5ClApelyb7"
-    table_name = "Table 1"  # or whatever your table is named
-
-    airtable_url = f"https://api.airtable.com/v0/{base_id}/{table_name}"
-    headers = {
-        "Authorization": f"Bearer {airtable_token}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "fields": {
-            "Timestamp": timestamp,
-            "Job Title": title,
-            "Company": company,
-            "URL": url
-        }
-    }
+    print(f"[LOG] Applied → {job['url']}", flush=True)
 
     try:
-        res = requests.post(airtable_url, headers=headers, json=data)
-        if res.status_code in [200, 201]:
-            print("[AIRTABLE] Logged successfully")
-        else:
-            print(f"[AIRTABLE ERROR] {res.status_code}: {res.text}")
+        airtable_url = f"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}/{AIRTABLE_TABLE_NAME}"
+        headers = {
+            "Authorization": f"Bearer {AIRTABLE_TOKEN}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "fields": {
+                "timestamp": row[0],
+                "title": job["title"],
+                "company": job["company"],
+                "url": job["url"]
+            }
+        }
+        r = requests.post(airtable_url, headers=headers, json=data)
+        if r.status_code != 200:
+            print(f"[AIRTABLE ERROR] {r.status_code}: {r.text}")
     except Exception as e:
-        print(f"[AIRTABLE EXCEPTION] {e}")
+        print(f"[AIRTABLE ERROR] {e}")
 
-
-
-
-# SCRAPERS
+# --- SCRAPERS ---
 
 def scrape_remotive():
     print("[SCRAPE] Remotive...")
@@ -94,8 +84,7 @@ def scrape_remotive():
             t = tile.select_one(".job-tile-title")
             l = tile.select_one("a")
             c = tile.select_one(".job-tile-company")
-            if not (t and l):
-                continue
+            if not (t and l): continue
             title = t.get_text(strip=True)
             company = c.get_text(strip=True) if c else "Unknown"
             href = l["href"]
@@ -116,8 +105,7 @@ def scrape_remoteok():
         soup = BeautifulSoup(r.text, "html.parser")
         for row in soup.select("tr.job")[:MAX_RESULTS]:
             l = row.select_one("a.preventLink")
-            if not l:
-                continue
+            if not l: continue
             full_url = "https://remoteok.io" + l["href"]
             title = row.get("data-position", "Remote Job")
             company = row.get("data-company", "Unknown")
@@ -129,7 +117,7 @@ def scrape_remoteok():
     return jobs
 
 def scrape_weworkremotely():
-    print("[SCRAPE] We Work Remotely...")
+    print("[SCRAPE] WeWorkRemotely...")
     url = "https://weworkremotely.com/categories/remote-programming-jobs"
     jobs = []
     try:
@@ -137,55 +125,21 @@ def scrape_weworkremotely():
         soup = BeautifulSoup(r.text, "html.parser")
         for section in soup.select("section.jobs li.feature")[:MAX_RESULTS]:
             l = section.select_one("a")
-            if not l:
-                continue
+            if not l: continue
             href = l["href"]
             full_url = "https://weworkremotely.com" + href
             title = section.get_text(strip=True)
-            company = "Unknown"
             if any(kw in title.lower() for kw in KEYWORDS):
-                jobs.append({"url": full_url, "title": title, "company": company})
+                jobs.append({"url": full_url, "title": title, "company": "Unknown"})
     except Exception as e:
         print(f"[ERROR] WWR: {e}")
     return jobs
-
-def scrape_jobspresso():
-    print("[SCRAPE] Jobspresso...")
-    url = "https://jobspresso.co/remote-tech-jobs/"
-    jobs = []
-    try:
-        r = requests.get(url, timeout=10)
-        soup = BeautifulSoup(r.text, "html.parser")
-        for post in soup.select("article.job_listing")[:MAX_RESULTS]:
-            title_el = post.select_one("h3")
-            company_el = post.select_one("div.company")
-            link_el = post.select_one("a")
-            if title_el and link_el:
-                title = title_el.get_text(strip=True)
-                company = company_el.get_text(strip=True) if company_el else "Unknown"
-                href = link_el["href"]
-                if any(kw in (title + company).lower() for kw in KEYWORDS):
-                    jobs.append({"url": href, "title": title, "company": company})
-    except Exception as e:
-        print(f"[ERROR] Jobspresso: {e}")
-    return jobs
-
-def scrape_otta():
-    print("[SCRAPE] Otta...")
-    return []
-
-def scrape_angellist():
-    print("[SCRAPE] AngelList...")
-    return []
 
 def get_jobs():
     scrapers = [
         scrape_remotive,
         scrape_remoteok,
-        scrape_weworkremotely,
-        scrape_jobspresso,
-        scrape_otta,
-        scrape_angellist
+        scrape_weworkremotely
     ]
     all_jobs = []
     for fn in scrapers:
@@ -208,11 +162,12 @@ def apply_to_job(job):
     options.add_argument('--headless')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(options=options)
 
+    driver = webdriver.Chrome(options=options)
     try:
         driver.get(job["url"])
         time.sleep(4)
+
         inputs = driver.find_elements(By.TAG_NAME, "input")
         for i in inputs:
             name = i.get_attribute("name")
@@ -242,6 +197,7 @@ def apply_to_job(job):
 def bot_cycle():
     applied = load_applied_urls()
     print(f"[BOT] Loaded {len(applied)} applied URLs")
+
     jobs = get_jobs()
     print(f"[BOT] Fetched {len(jobs)} jobs")
     for job in jobs:
@@ -249,10 +205,12 @@ def bot_cycle():
         if u in applied:
             print(f"⏩ Skipping {u}")
             continue
+
         print(f"[APPLY] {u}")
         apply_to_job(job)
         log_application(job)
         applied.add(u)
+
     print("[BOT] Cycle complete")
 
 def scheduler():

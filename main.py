@@ -67,7 +67,7 @@ def log_application(job):
             "fields": {
                 "Time_stamp": row[0],        # match Airtable field
                 "Title": job["title"],       # match Airtable field
-                "company": job["company"],
+                "Company": job["company"],
                 "URL": job["url"]
             }
         }

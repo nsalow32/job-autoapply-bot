@@ -72,11 +72,20 @@ def log_application(job):
     except Exception as e:
         print(f"[AIRTABLE ERROR] {e}", flush=True)
 
-def location_allowed(text):
-    locs = config.get("location_filter", "").lower().split(",")
-    if not locs or locs == [""]:  # No filter
-        return True
-    return any(loc.strip() in text for loc in locs)
+ddef location_allowed(text):
+    raw = config.get("location_filter", "")
+    if not raw.strip():
+        return True  # No filter = allow everything
+
+    locs = [loc.strip().lower() for loc in raw.split(",") if loc.strip()]
+    text = text.lower()
+
+    for loc in locs:
+        if loc in text:
+            return True
+
+    return False
+
 
 
 def scrape_remotive():

@@ -73,8 +73,11 @@ def log_application(job):
         print(f"[AIRTABLE ERROR] {e}", flush=True)
 
 def location_allowed(text):
-    loc = config.get("location_filter", "").lower()
-    return loc in text.lower() if loc else True
+    locs = config.get("location_filter", "").lower().split(",")
+    if not locs or locs == [""]:  # No filter
+        return True
+    return any(loc.strip() in text for loc in locs)
+
 
 def scrape_remotive():
     print("[SCRAPE] Remotive...", flush=True)

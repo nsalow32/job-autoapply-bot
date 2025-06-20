@@ -72,24 +72,28 @@ def log_application(job):
     except Exception as e:
         print(f"[AIRTABLE ERROR] {e}", flush=True)
 
+def location_allowed(text):
+    loc = config.get("location_filter", "").lower()
+    return loc in text.lower() if loc else True
+
 def scrape_remotive():
     print("[SCRAPE] Remotive...", flush=True)
     url  = "https://remotive.io/remote-jobs/software-dev"
     jobs = []
     try:
-        r    = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
         for tile in soup.select("div.job-tile")[:MAX_RESULTS]:
             t = tile.select_one(".job-tile-title")
             l = tile.select_one("a")
             c = tile.select_one(".job-tile-company")
             if not (t and l): continue
-            title   = t.get_text(strip=True)
+            title = t.get_text(strip=True)
             company = c.get_text(strip=True) if c else "Unknown"
-            href    = l["href"]
-            full    = href if href.startswith("http") else f"https://remotive.io{href}"
-            text    = (title + " " + company).lower()
-            if any(kw in text for kw in KEYWORDS):
+            href = l["href"]
+            full = href if href.startswith("http") else f"https://remotive.io{href}"
+            text = (title + " " + company + " " + full).lower()
+            if any(kw in text for kw in KEYWORDS) and location_allowed(text):
                 jobs.append({"url": full, "title": title, "company": company})
     except Exception as e:
         print(f"[ERROR] Remotive: {e}", flush=True)
@@ -97,19 +101,19 @@ def scrape_remotive():
 
 def scrape_remoteok():
     print("[SCRAPE] RemoteOK...", flush=True)
-    url  = "https://remoteok.io/remote-dev-jobs"
+    url = "https://remoteok.io/remote-dev-jobs"
     jobs = []
     try:
-        r    = requests.get(url, headers={"User-Agent":"Mozilla/5.0"}, timeout=10)
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
         for row in soup.select("tr.job")[:MAX_RESULTS]:
             l = row.select_one("a.preventLink")
             if not l: continue
             full_url = "https://remoteok.io" + l["href"]
-            title    = row.get("data-position", "Remote Job")
-            company  = row.get("data-company", "Unknown")
-            text     = (title + " " + company).lower()
-            if any(kw in text for kw in KEYWORDS):
+            title = row.get("data-position", "Remote Job")
+            company = row.get("data-company", "Unknown")
+            text = (title + " " + company + " " + full_url).lower()
+            if any(kw in text for kw in KEYWORDS) and location_allowed(text):
                 jobs.append({"url": full_url, "title": title, "company": company})
     except Exception as e:
         print(f"[ERROR] RemoteOK: {e}", flush=True)
@@ -117,18 +121,19 @@ def scrape_remoteok():
 
 def scrape_weworkremotely():
     print("[SCRAPE] WeWorkRemotely...", flush=True)
-    url  = "https://weworkremotely.com/categories/remote-programming-jobs"
+    url = "https://weworkremotely.com/categories/remote-programming-jobs"
     jobs = []
     try:
-        r    = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=10)
         soup = BeautifulSoup(r.text, "html.parser")
         for sec in soup.select("section.jobs li.feature")[:MAX_RESULTS]:
             l = sec.select_one("a")
             if not l: continue
-            href     = l["href"]
+            href = l["href"]
             full_url = "https://weworkremotely.com" + href
-            title    = sec.get_text(strip=True)
-            if any(kw in title.lower() for kw in KEYWORDS):
+            title = sec.get_text(strip=True)
+            text = (title + " " + full_url).lower()
+            if any(kw in title.lower() for kw in KEYWORDS) and location_allowed(text):
                 jobs.append({"url": full_url, "title": title, "company": "Unknown"})
     except Exception as e:
         print(f"[ERROR] WWR: {e}", flush=True)
@@ -148,11 +153,13 @@ def scrape_jobspresso():
             title = a.get("title", "Remote Job")
             company = li.select_one(".company")
             company_name = company.get_text(strip=True) if company else "Unknown"
-            if any(kw in title.lower() for kw in KEYWORDS):
+            text = (title + " " + company_name + " " + href).lower()
+            if any(kw in title.lower() for kw in KEYWORDS) and location_allowed(text):
                 jobs.append({"url": href, "title": title, "company": company_name})
     except Exception as e:
         print(f"[ERROR] Jobspresso: {e}", flush=True)
     return jobs
+
 def scrape_remoteco():
     print("[SCRAPE] Remote.co...", flush=True)
     url = "https://remote.co/remote-jobs/developer/"
@@ -167,11 +174,13 @@ def scrape_remoteco():
             title = a.get("title", "Remote Job")
             company = row.select_one(".company")
             company_name = company.get_text(strip=True) if company else "Unknown"
-            if any(kw in title.lower() for kw in KEYWORDS):
+            text = (title + " " + company_name + " " + href).lower()
+            if any(kw in title.lower() for kw in KEYWORDS) and location_allowed(text):
                 jobs.append({"url": href, "title": title, "company": company_name})
     except Exception as e:
         print(f"[ERROR] Remote.co: {e}", flush=True)
     return jobs
+
 
 
 def get_jobs():

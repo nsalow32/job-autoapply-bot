@@ -81,7 +81,7 @@ def scrape_remotive():
     url  = "https://remotive.io/remote-jobs/software-dev"
     jobs = []
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=20)
         soup = BeautifulSoup(r.text, "html.parser")
         for tile in soup.select("div.job-tile")[:MAX_RESULTS]:
             t = tile.select_one(".job-tile-title")
@@ -104,7 +104,7 @@ def scrape_remoteok():
     url = "https://remoteok.io/remote-dev-jobs"
     jobs = []
     try:
-        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
         soup = BeautifulSoup(r.text, "html.parser")
         for row in soup.select("tr.job")[:MAX_RESULTS]:
             l = row.select_one("a.preventLink")
@@ -124,7 +124,7 @@ def scrape_weworkremotely():
     url = "https://weworkremotely.com/categories/remote-programming-jobs"
     jobs = []
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=20)
         soup = BeautifulSoup(r.text, "html.parser")
         for sec in soup.select("section.jobs li.feature")[:MAX_RESULTS]:
             l = sec.select_one("a")
@@ -144,7 +144,7 @@ def scrape_jobspresso():
     url = "https://jobspresso.co/remote-developer-jobs/"
     jobs = []
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=20)
         soup = BeautifulSoup(r.text, "html.parser")
         for li in soup.select("ul.jobs li.job_listing")[:MAX_RESULTS]:
             a = li.select_one("a")
@@ -165,7 +165,7 @@ def scrape_remoteco():
     url = "https://remote.co/remote-jobs/developer/"
     jobs = []
     try:
-        r = requests.get(url, timeout=10)
+        r = requests.get(url, timeout=20)
         soup = BeautifulSoup(r.text, "html.parser")
         for row in soup.select("li.job_listing")[:MAX_RESULTS]:
             a = row.select_one("a")
@@ -186,8 +186,13 @@ def scrape_remoteco():
 def get_jobs():
     all_jobs = []
     for fn in (scrape_remotive, scrape_remoteok, scrape_weworkremotely, scrape_jobspresso, scrape_remoteco):
+        try:
+            jobs = fn()
+            all_jobs.extend(jobs)
+        except Exception as e:
+            print(f"[SCRAPE ERROR] {fn.__name__}: {e}", flush=True)
+        time.sleep(3)  # Delay between scrapers to reduce timeout risk
 
-        all_jobs.extend(fn())
     seen, unique = set(), []
     for j in all_jobs:
         if j["url"] not in seen:
@@ -195,8 +200,10 @@ def get_jobs():
             unique.append(j)
         if len(unique) >= MAX_RESULTS:
             break
+
     print(f"[SCRAPE] {len(unique)} unique jobs found", flush=True)
     return unique
+
 
 def apply_to_job(job):
     print(f"[AUTO] Applying → {job['url']}", flush=True)

@@ -72,7 +72,7 @@ def log_application(job):
     except Exception as e:
         print(f"[AIRTABLE ERROR] {e}", flush=True)
 
-ddef location_allowed(text):
+def location_allowed(text):
     raw = config.get("location_filter", "")
     if not raw.strip():
         return True  # No filter = allow everything

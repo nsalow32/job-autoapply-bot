@@ -133,7 +133,7 @@ def scrape_remoteok():
 
 def scrape_weworkremotely():
     print("[SCRAPE] WeWorkRemotely...", flush=True)
-    url = "https://weworkremotely.com/categories/remote-programming-jobs"
+    url = "https://weworkremotely.com/categories/remote-design-jobs#job-listings"
     jobs = []
     try:
         r = requests.get(url, timeout=20)
@@ -153,7 +153,7 @@ def scrape_weworkremotely():
 
 def scrape_jobspresso():
     print("[SCRAPE] Jobspresso...", flush=True)
-    url = "https://jobspresso.co/remote-developer-jobs/"
+    url = "https://jobspresso.co/remote-design-jobs/"
     jobs = []
     try:
         r = requests.get(url, timeout=20)
@@ -174,7 +174,7 @@ def scrape_jobspresso():
 
 def scrape_remoteco():
     print("[SCRAPE] Remote.co...", flush=True)
-    url = "https://remote.co/remote-jobs/developer/"
+    url = "https://remote.co/remote-jobs"
     jobs = []
     try:
         r = requests.get(url, timeout=20)

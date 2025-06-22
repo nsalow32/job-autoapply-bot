@@ -1,12 +1,12 @@
 {
-  "keywords": ["python", "automation", "entry level", "remote", "developer", "ai", "it"],
+  "keywords": ["design", "graphic design", "web design", "senior designer", "designer", "marketing design", "Photoshop", "Illustrator", "InDesign", "Figma", "Social Media", "Adobe", "Creative"],
   "max_results": 50,
   "resume_path": "resume.pdf",
   "user_data": {
-    "full_name": "Jesse Torres",
-    "email": "jessetorres386@gmail.com",
-    "phone": "3234723070",
-    "linkedin": "https://www.linkedin.com/in/jesse-torres11/"
+    "full_name": "Nicole Salow",
+    "email": "nicole.salow@gmail.com",
+    "phone": "5157293744",
+    "linkedin": "https://www.linkedin.com/in/nicole-salow/"
   },
   "location_filter": ""
 

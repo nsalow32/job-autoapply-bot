@@ -51,9 +51,9 @@ Copy these:
 Base ID → starts with app...
 Table ID (under Table 1) → starts with tbl...
 
-AIRTABLE_TOKEN      = your_token_here
-AIRTABLE_BASE_ID    = your_base_id_here
-AIRTABLE_TABLE_NAME = your_table_id_here
+AIRTABLE_TOKEN      = patWmvKPwh56LShCz.4e138c210f495bb91ea0b8025558b07842a63bfdc75857221b411d40849ec53e
+AIRTABLE_BASE_ID    = appspNnVNhF5sb90z/tbl1RAyYE4scoBH3q
+AIRTABLE_TABLE_NAME = tbl1RAyYE4scoBH3q
 
 ✅ Make sure your Time_stamp field in Airtable is set to:
 

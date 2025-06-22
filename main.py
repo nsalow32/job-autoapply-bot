@@ -90,7 +90,7 @@ def location_allowed(text):
 
 def scrape_remotive():
     print("[SCRAPE] Remotive...", flush=True)
-    url  = "https://remotive.io/remote-jobs/software-dev"
+    url  = "https://remotive.com/remote-jobs/design"
     jobs = []
     try:
         r = requests.get(url, timeout=20)
@@ -113,7 +113,7 @@ def scrape_remotive():
 
 def scrape_remoteok():
     print("[SCRAPE] RemoteOK...", flush=True)
-    url = "https://remoteok.io/remote-dev-jobs"
+    url = "https://remotive.com/remote-jobs/design"
     jobs = []
     try:
         r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
